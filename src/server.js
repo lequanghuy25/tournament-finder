@@ -78,17 +78,16 @@ app.get("/api/debug/fide-calendar-server", async (req, res) => {
     res.status(404).json({ ok: false });
     return;
   }
-  const form = new URLSearchParams({
-    country: String(req.query.country || "all"),
-    name_filter: String(req.query.query || ""),
-    event_type: "all",
-    time_control: String(req.query.time_control || "all"),
-    page: String(req.query.page || "1"),
-    cat_cont: "0",
-    from_date: String(req.query.from_date || new Date().toISOString().slice(0, 10)),
-    to_date: String(req.query.to_date || "2026-12-31"),
-    show: String(req.query.show || "table")
-  });
+  const form = new URLSearchParams();
+  form.set("country", String(req.query.country || "all"));
+  form.set("name_filter", String(req.query.query || ""));
+  form.set("event_type", "all");
+  form.set("time_control", String(req.query.time_control || "all"));
+  form.set("page", String(req.query.page || "1"));
+  form.append("cat_cont[]", "0");
+  form.set("from_date", String(req.query.from_date || new Date().toISOString().slice(0, 10)));
+  form.set("to_date", String(req.query.to_date || "2026-12-31"));
+  form.set("show", String(req.query.show || "table"));
   const landing = await fetch("https://calendar.fide.com/calendar.php", {
     headers: { "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics" }
   });
