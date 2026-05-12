@@ -73,6 +73,36 @@ app.get("/api/debug/fide-file", async (req, res) => {
   res.type("text/plain").send(text);
 });
 
+app.get("/api/debug/fide-calendar-server", async (req, res) => {
+  if (process.env.ENABLE_DEBUG !== "1") {
+    res.status(404).json({ ok: false });
+    return;
+  }
+  const form = new URLSearchParams({
+    country: String(req.query.country || "all"),
+    name_filter: String(req.query.query || ""),
+    event_type: "all",
+    time_control: String(req.query.time_control || "all"),
+    page: String(req.query.page || "1"),
+    cat_cont: "0",
+    from_date: String(req.query.from_date || new Date().toISOString().slice(0, 10)),
+    to_date: String(req.query.to_date || "2026-12-31"),
+    show: String(req.query.show || "table")
+  });
+  const response = await fetch("https://calendar.fide.com/calendar_server.php", {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "x-requested-with": "XMLHttpRequest",
+      "referer": "https://calendar.fide.com/calendar.php",
+      "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics"
+    },
+    body: form
+  });
+  const text = await response.text();
+  res.type("text/plain").send(text);
+});
+
 app.get("/api/tournaments", async (req, res) => {
   try {
     const result = await getTournaments({
