@@ -56,6 +56,23 @@ app.get("/api/debug/fide-calendar", async (req, res) => {
   res.type("text/plain").send(html.slice(start, start + length));
 });
 
+app.get("/api/debug/fide-file", async (req, res) => {
+  if (process.env.ENABLE_DEBUG !== "1") {
+    res.status(404).json({ ok: false });
+    return;
+  }
+  const file = String(req.query.file || "");
+  if (!/^(js|css)\//.test(file)) {
+    res.status(400).json({ ok: false, error: "Invalid file" });
+    return;
+  }
+  const response = await fetch(new URL(file, "https://calendar.fide.com/"), {
+    headers: { "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics" }
+  });
+  const text = await response.text();
+  res.type("text/plain").send(text);
+});
+
 app.get("/api/tournaments", async (req, res) => {
   try {
     const result = await getTournaments({
