@@ -2,6 +2,7 @@ import { load } from "cheerio";
 
 const FIDE_CALENDAR = "https://calendar.fide.com/calendar.php";
 const FIDE_RATED = "https://ratings.fide.com/rated_tournaments.phtml";
+const FIDE_RATED_DATA = "https://ratings.fide.com/a_tournaments.php";
 const CACHE_TTL_MS = 1000 * 60 * 30;
 const cache = new Map();
 
@@ -98,30 +99,37 @@ async function fetchRatedTournaments(filters) {
   const country = filters.country || "USA";
   const months = monthsBetween(filters.fromYear, filters.toDate);
   const pages = await Promise.all(months.map(async (period) => {
-    const url = `${FIDE_RATED}?country=${encodeURIComponent(country)}&period=${period}`;
-    return { period, url, html: await cachedFetch(url) };
+    const params = new URLSearchParams({ country, period });
+    const url = `${FIDE_RATED_DATA}?${params.toString()}`;
+    const json = await cachedFetch(url, {
+      accept: "application/json, text/javascript, */*; q=0.01",
+      referer: `${FIDE_RATED}?${params.toString()}`,
+      requestedWith: "XMLHttpRequest"
+    });
+    return { period, url: `${FIDE_RATED}?${params.toString()}`, json };
   }));
 
   const rows = [];
   for (const page of pages) {
-    const $ = load(page.html);
-    $("table tr").each((_, tr) => {
-      const cells = $(tr).find("td").map((__, td) => clean($(td).text())).get();
-      if (cells.length < 4) return;
-      const parsed = parseRatedCells(cells, country, page.period);
-      if (parsed.name) rows.push({ ...parsed, source: "FIDE Rated Tournaments", url: page.url });
-    });
+    const data = JSON.parse(page.json);
+    const items = Array.isArray(data?.data) ? data.data : [];
+    for (const item of items) {
+      const parsed = parseRatedDataRow(item, country, page.period);
+      if (parsed.name) rows.push({ ...parsed, source: "FIDE Rated Tournaments" });
+    }
   }
   return dedupe(rows);
 }
 
-async function cachedFetch(url) {
+async function cachedFetch(url, options = {}) {
   const hit = cache.get(url);
   if (hit && Date.now() - hit.time < CACHE_TTL_MS) return hit.html;
 
   const response = await fetch(url, {
     headers: {
-      "accept": "text/html,application/xhtml+xml",
+      "accept": options.accept || "text/html,application/xhtml+xml",
+      ...(options.referer ? { "referer": options.referer } : {}),
+      ...(options.requestedWith ? { "x-requested-with": options.requestedWith } : {}),
       "user-agent": "Mozilla/5.0 FIDE tournament finder for family planning"
     }
   });
@@ -161,6 +169,28 @@ function parseRatedCells(cells, country, period) {
     endDate: "",
     status: `FRL ${period}`,
     raw: cells.join(" ")
+  };
+}
+
+function parseRatedDataRow(item, country, period) {
+  const [id, nameHtml, city, eventKind, startDate, endHtml, listName] = item;
+  const $ = load(String(nameHtml || ""));
+  const name = clean($.text());
+  const href = $("a[href]").first().attr("href") || `/report.phtml?event=${id}`;
+  const endDate = clean(load(String(endHtml || "")).text());
+  const type = inferType(`${name} ${eventKind}`);
+  return {
+    id: String(id || ""),
+    name,
+    type: type.label,
+    typeKey: type.key,
+    country,
+    city: clean(city),
+    startDate: normalizeDate(clean(startDate)),
+    endDate: normalizeDate(endDate),
+    status: clean(listName || period),
+    url: absolutize(href, "https://ratings.fide.com/"),
+    raw: `${name} ${city} ${eventKind} ${listName}`
   };
 }
 

@@ -149,7 +149,7 @@ app.get("/api/debug/fide-rated-data", async (req, res) => {
 app.get("/api/tournaments", async (req, res) => {
   try {
     const result = await getTournaments({
-      source: String(req.query.source || "calendar"),
+      source: String(req.query.source || "rated"),
       country: String(req.query.country || ""),
       fromYear: Number(req.query.fromYear || new Date().getFullYear()),
       toDate: String(req.query.toDate || new Date().toISOString().slice(0, 10)),
