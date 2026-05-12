@@ -42,6 +42,18 @@ app.get("/api/diagnostics", async (_req, res) => {
   res.json({ ok: checks.every((check) => check.ok), checks });
 });
 
+app.get("/api/debug/fide-calendar", async (_req, res) => {
+  if (process.env.ENABLE_DEBUG !== "1") {
+    res.status(404).json({ ok: false });
+    return;
+  }
+  const response = await fetch("https://calendar.fide.com/calendar.php", {
+    headers: { "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics" }
+  });
+  const html = await response.text();
+  res.type("text/plain").send(html.slice(0, 20000));
+});
+
 app.get("/api/tournaments", async (req, res) => {
   try {
     const result = await getTournaments({
