@@ -125,6 +125,27 @@ app.get("/api/debug/fide-rated", async (req, res) => {
   res.type("text/plain").send(text);
 });
 
+app.get("/api/debug/fide-rated-data", async (req, res) => {
+  if (process.env.ENABLE_DEBUG !== "1") {
+    res.status(404).json({ ok: false });
+    return;
+  }
+  const params = new URLSearchParams({
+    country: String(req.query.country || "VIE"),
+    period: String(req.query.period || "2026-05-01")
+  });
+  const response = await fetch(`https://ratings.fide.com/a_tournaments.php?${params.toString()}`, {
+    headers: {
+      "accept": "application/json, text/javascript, */*; q=0.01",
+      "referer": `https://ratings.fide.com/rated_tournaments.phtml?${params.toString()}`,
+      "x-requested-with": "XMLHttpRequest",
+      "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics"
+    }
+  });
+  const text = await response.text();
+  res.type("application/json").send(text);
+});
+
 app.get("/api/tournaments", async (req, res) => {
   try {
     const result = await getTournaments({
