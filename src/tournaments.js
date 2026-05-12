@@ -40,7 +40,7 @@ export async function getTournaments(filters) {
     count: rows.length,
     rows,
     notes: source === "rated"
-      ? "Nguồn FIDE Rated Tournaments là danh sách giải đã/đang được đưa vào rating list theo tháng và quốc gia; không phải lịch đăng ký thi đấu đầy đủ."
+      ? "Nguồn FIDE Rated Tournaments là danh sách giải đã/đang được đưa vào rating list. Khi để trống quốc gia, app lấy country=all từ FIDE; endpoint này không trả mã quốc gia riêng cho từng giải."
       : "Nguồn FIDE Calendar là lịch sự kiện FIDE. FIDE không công bố API chính thức ổn định cho endpoint này, backend đang đọc HTML và có cache 30 phút."
   };
 }
@@ -105,7 +105,7 @@ async function fetchCalendarTournaments(filters) {
 }
 
 async function fetchRatedTournaments(filters) {
-  const country = filters.country || "USA";
+  const country = filters.country || "all";
   const months = monthsBetween(filters.fromDate || `${filters.fromYear}-01-01`, filters.toDate);
   const pages = await Promise.all(months.map(async (period) => {
     const params = new URLSearchParams({ country, period });
@@ -193,7 +193,7 @@ function parseRatedDataRow(item, country, period) {
     name,
     type: type.label,
     typeKey: type.key,
-    country,
+    country: country === "all" ? "Toàn thế giới" : country,
     city: clean(city),
     startDate: normalizeDate(clean(startDate)),
     endDate: normalizeDate(endDate),
