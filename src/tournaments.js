@@ -40,7 +40,7 @@ export async function getTournaments(filters) {
     count: rows.length,
     rows,
     notes: source === "rated"
-      ? "Nguồn FIDE Rated Tournaments là danh sách giải đã/đang được đưa vào rating list. Khi để trống quốc gia, app lấy country=all từ FIDE; endpoint này không trả mã quốc gia riêng cho từng giải."
+      ? "Nguồn FIDE Rated Tournaments là danh sách giải đã/đang được đưa vào rating list. Khi để trống quốc gia, app lấy country=all từ FIDE; endpoint này không trả mã quốc gia riêng cho từng giải nên cột quốc gia sẽ là Chưa rõ."
       : "Nguồn FIDE Calendar là lịch sự kiện FIDE. FIDE không công bố API chính thức ổn định cho endpoint này, backend đang đọc HTML và có cache 30 phút."
   };
 }
@@ -193,7 +193,7 @@ function parseRatedDataRow(item, country, period) {
     name,
     type: type.label,
     typeKey: type.key,
-    country: country === "all" ? "Toàn thế giới" : country,
+    country: country === "all" ? "Chưa rõ" : country,
     city: clean(city),
     startDate: normalizeDate(clean(startDate)),
     endDate: normalizeDate(endDate),
