@@ -203,7 +203,7 @@ function applyFilters(rows, filters) {
   return rows.filter((row) => {
     const haystack = `${row.name} ${row.country} ${row.city} ${row.raw || ""}`.toLowerCase();
     if (q && !haystack.includes(q)) return false;
-    if (type !== "all" && row.typeKey && row.typeKey !== type) return false;
+    if (type !== "all" && row.typeKey !== type) return false;
     if (row.startDate) {
       const date = new Date(row.startDate);
       if (!Number.isNaN(date.valueOf()) && (date < from || date > to)) return false;
