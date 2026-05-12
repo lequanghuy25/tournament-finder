@@ -45,8 +45,17 @@ export async function getTournaments(filters) {
   };
 }
 
+export async function getCountries() {
+  const html = await cachedFetch(`${FIDE_RATED}?country=all`);
+  const $ = load(html);
+  return $("#select_country option").map((_, option) => ({
+    code: clean($(option).attr("value")),
+    name: clean($(option).text())
+  })).get().filter((country) => country.code && country.code !== "all");
+}
+
 async function fetchCalendarTournaments(filters) {
-  const from = `${filters.fromYear}-01-01`;
+  const from = filters.fromDate || `${filters.fromYear}-01-01`;
   const to = filters.toDate || new Date().toISOString().slice(0, 10);
   const params = new URLSearchParams({
     search: filters.query || "",
@@ -97,7 +106,7 @@ async function fetchCalendarTournaments(filters) {
 
 async function fetchRatedTournaments(filters) {
   const country = filters.country || "USA";
-  const months = monthsBetween(filters.fromYear, filters.toDate);
+  const months = monthsBetween(filters.fromDate || `${filters.fromYear}-01-01`, filters.toDate);
   const pages = await Promise.all(months.map(async (period) => {
     const params = new URLSearchParams({ country, period });
     const url = `${FIDE_RATED_DATA}?${params.toString()}`;
@@ -189,6 +198,7 @@ function parseRatedDataRow(item, country, period) {
     startDate: normalizeDate(clean(startDate)),
     endDate: normalizeDate(endDate),
     status: clean(listName || period),
+    typeNote: type.key ? "Suy luận từ tên giải FIDE" : "FIDE rated list không trả field loại cờ riêng",
     url: absolutize(href, "https://ratings.fide.com/"),
     raw: `${name} ${city} ${eventKind} ${listName}`
   };
@@ -197,7 +207,7 @@ function parseRatedDataRow(item, country, period) {
 function applyFilters(rows, filters) {
   const q = String(filters.query || "").trim().toLowerCase();
   const type = String(filters.type || "all");
-  const from = new Date(`${filters.fromYear || new Date().getFullYear()}-01-01`);
+  const from = new Date(filters.fromDate || `${filters.fromYear || new Date().getFullYear()}-01-01`);
   const to = new Date(filters.toDate || new Date());
 
   return rows.filter((row) => {
@@ -257,12 +267,14 @@ function pickCity(cells) {
   return cells.find((cell) => /^[A-Za-zÀ-ỹ\s.'-]{3,}$/.test(cell) && !/standard|rapid|blitz|event|tournament/i.test(cell)) || "";
 }
 
-function monthsBetween(fromYear, toDate) {
+function monthsBetween(fromDate, toDate) {
+  const start = new Date(fromDate || `${new Date().getFullYear()}-01-01`);
   const end = new Date(toDate || new Date());
   const months = [];
-  for (let year = Number(fromYear); year <= end.getFullYear(); year += 1) {
+  for (let year = start.getFullYear(); year <= end.getFullYear(); year += 1) {
+    const firstMonth = year === start.getFullYear() ? start.getMonth() : 0;
     const lastMonth = year === end.getFullYear() ? end.getMonth() : 11;
-    for (let month = 0; month <= lastMonth; month += 1) {
+    for (let month = firstMonth; month <= lastMonth; month += 1) {
       months.push(`${year}-${String(month + 1).padStart(2, "0")}-01`);
     }
   }

@@ -44,8 +44,8 @@
           <input name="country" list="countries" placeholder="VD: VIE, THA, USA">
         </label>
         <label>
-          Từ năm
-          <input name="fromYear" type="number" min="2000" max="2026" value="2026">
+          Từ ngày
+          <input name="fromDate" type="date">
         </label>
         <label>
           Đến ngày
@@ -75,6 +75,7 @@
         <table>
           <thead>
             <tr>
+              <th>STT</th>
               <th>Tên giải</th>
               <th>Loại</th>
               <th>Quốc gia</th>
@@ -85,7 +86,7 @@
             </tr>
           </thead>
           <tbody id="rows">
-            <tr><td colspan="7" class="empty">Nhập bộ lọc rồi tìm kiếm.</td></tr>
+            <tr><td colspan="8" class="empty">Nhập bộ lọc rồi tìm kiếm.</td></tr>
           </tbody>
         </table>
       </section>

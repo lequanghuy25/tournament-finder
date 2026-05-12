@@ -1,8 +1,10 @@
 export function exportExcelHtml(rows) {
-  const headers = ["Tên giải", "Loại", "Quốc gia", "Thành phố", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái/Ghi chú", "Nguồn", "Link"];
-  const body = rows.map((row) => [
+  const headers = ["STT", "Tên giải", "Loại", "Ghi chú loại cờ", "Quốc gia", "Thành phố", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái/Ghi chú", "Nguồn", "Link"];
+  const body = rows.map((row, index) => [
+    index + 1,
     row.name,
     row.typeLabel || row.type,
+    row.typeNote,
     row.country,
     row.city,
     row.startDate,

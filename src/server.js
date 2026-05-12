@@ -1,7 +1,7 @@
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getTournaments } from "./tournaments.js";
+import { getCountries, getTournaments } from "./tournaments.js";
 import { exportExcelHtml } from "./xlsx.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +40,14 @@ app.get("/api/diagnostics", async (_req, res) => {
     }
   }));
   res.json({ ok: checks.every((check) => check.ok), checks });
+});
+
+app.get("/api/countries", async (_req, res) => {
+  try {
+    res.json({ ok: true, countries: await getCountries() });
+  } catch (error) {
+    res.status(502).json({ ok: false, error: error.message });
+  }
 });
 
 app.get("/api/debug/fide-calendar", async (req, res) => {
@@ -152,7 +160,8 @@ app.get("/api/tournaments", async (req, res) => {
       source: String(req.query.source || "rated"),
       country: String(req.query.country || ""),
       fromYear: Number(req.query.fromYear || new Date().getFullYear()),
-      toDate: String(req.query.toDate || new Date().toISOString().slice(0, 10)),
+      fromDate: String(req.query.fromDate || ""),
+      toDate: String(req.query.toDate || `${new Date().getFullYear()}-12-31`),
       type: String(req.query.type || "all"),
       query: String(req.query.query || "")
     });

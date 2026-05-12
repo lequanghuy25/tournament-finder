@@ -5,7 +5,10 @@ const noteEl = document.querySelector("#note");
 const exportButton = document.querySelector("#exportButton");
 let currentRows = [];
 
-form.elements.toDate.value = new Date().toISOString().slice(0, 10);
+const today = new Date();
+form.elements.fromDate.value = today.toISOString().slice(0, 10);
+form.elements.toDate.value = `${today.getFullYear()}-12-31`;
+loadCountries();
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -29,7 +32,7 @@ exportButton.addEventListener("click", async () => {
 });
 
 async function search() {
-  rowsEl.innerHTML = `<tr><td colspan="7" class="empty">Đang lấy dữ liệu từ FIDE...</td></tr>`;
+  rowsEl.innerHTML = `<tr><td colspan="8" class="empty">Đang lấy dữ liệu từ FIDE...</td></tr>`;
   const params = new URLSearchParams(new FormData(form));
   try {
     const response = await fetch(`/api/tournaments?${params.toString()}`);
@@ -43,22 +46,36 @@ async function search() {
     currentRows = [];
     countEl.textContent = "0";
     noteEl.textContent = error.message;
-    rowsEl.innerHTML = `<tr><td colspan="7" class="empty">Không lấy được dữ liệu từ FIDE. Server app vẫn chạy, nhưng mạng hiện tại không truy cập được nguồn FIDE.</td></tr>`;
+    rowsEl.innerHTML = `<tr><td colspan="8" class="empty">Không lấy được dữ liệu từ FIDE. Server app vẫn chạy, nhưng mạng hiện tại không truy cập được nguồn FIDE.</td></tr>`;
+  }
+}
+
+async function loadCountries() {
+  try {
+    const response = await fetch("/api/countries");
+    const data = await response.json();
+    if (!data.ok) return;
+    document.querySelector("#countries").innerHTML = data.countries.map((country) =>
+      `<option value="${escapeAttr(country.code)}">${escapeHtml(country.name)}</option>`
+    ).join("");
+  } catch {
+    // Keep the built-in fallback list.
   }
 }
 
 function renderRows(rows) {
   if (!rows.length) {
-    rowsEl.innerHTML = `<tr><td colspan="7" class="empty">Không có kết quả phù hợp.</td></tr>`;
+    rowsEl.innerHTML = `<tr><td colspan="8" class="empty">Không có kết quả phù hợp.</td></tr>`;
     return;
   }
-  rowsEl.innerHTML = rows.map((row) => `
+  rowsEl.innerHTML = rows.map((row, index) => `
     <tr>
+      <td>${index + 1}</td>
       <td>
         <a href="${escapeAttr(row.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(row.name || "Chưa rõ tên")}</a>
         ${row.status ? `<span>${escapeHtml(row.status)}</span>` : ""}
       </td>
-      <td>${escapeHtml(row.typeLabel || row.type || "Chưa rõ")}</td>
+      <td>${escapeHtml(row.typeLabel || row.type || "Chưa rõ")}${row.typeNote ? `<span>${escapeHtml(row.typeNote)}</span>` : ""}</td>
       <td>${escapeHtml(row.country || "")}</td>
       <td>${escapeHtml(row.city || "")}</td>
       <td>${escapeHtml(row.startDate || "")}</td>
