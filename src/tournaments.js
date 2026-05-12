@@ -317,6 +317,7 @@ function pickCity(cells) {
 function monthsBetween(fromDate, toDate) {
   const start = new Date(fromDate || `${new Date().getFullYear()}-01-01`);
   const end = new Date(toDate || new Date());
+  end.setMonth(end.getMonth() + 1);
   const months = [];
   for (let year = start.getFullYear(); year <= end.getFullYear(); year += 1) {
     const firstMonth = year === start.getFullYear() ? start.getMonth() : 0;
