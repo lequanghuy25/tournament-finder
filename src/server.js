@@ -89,12 +89,19 @@ app.get("/api/debug/fide-calendar-server", async (req, res) => {
     to_date: String(req.query.to_date || "2026-12-31"),
     show: String(req.query.show || "table")
   });
+  const landing = await fetch("https://calendar.fide.com/calendar.php", {
+    headers: { "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics" }
+  });
+  const cookie = landing.headers.getSetCookie?.().join("; ") || landing.headers.get("set-cookie") || "";
   const response = await fetch("https://calendar.fide.com/calendar_server.php", {
     method: "POST",
     headers: {
+      "accept": "*/*",
       "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "origin": "https://calendar.fide.com",
       "x-requested-with": "XMLHttpRequest",
       "referer": "https://calendar.fide.com/calendar.php",
+      "cookie": cookie,
       "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics"
     },
     body: form
