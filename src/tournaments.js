@@ -5,6 +5,7 @@ const FIDE_RATED = "https://ratings.fide.com/rated_tournaments.phtml";
 const FIDE_RATED_DATA = "https://ratings.fide.com/a_tournaments.php";
 const CACHE_TTL_MS = 1000 * 60 * 30;
 const cache = new Map();
+const eventCountryCache = new Map();
 
 const typeLabels = {
   all: "Tất cả",
@@ -128,7 +129,11 @@ async function fetchRatedTournaments(filters) {
       if (parsed.name) rows.push({ ...parsed, source: "FIDE Rated Tournaments" });
     }
   }
-  return dedupe(rows);
+  const uniqueRows = dedupe(rows);
+  if (country === "all") {
+    await enrichCountries(uniqueRows);
+  }
+  return uniqueRows;
 }
 
 function parseFideJson(value) {
@@ -204,7 +209,7 @@ function parseRatedDataRow(item, country, period) {
     name,
     type: type.label,
     typeKey: type.key,
-    country: country === "all" ? "Chưa rõ" : country,
+    country: country === "all" ? "" : country,
     city: clean(city),
     startDate: normalizeDate(clean(startDate)),
     endDate: normalizeDate(endDate),
@@ -213,6 +218,37 @@ function parseRatedDataRow(item, country, period) {
     url: absolutize(href, "https://ratings.fide.com/"),
     raw: `${name} ${city} ${eventKind} ${listName}`
   };
+}
+
+async function enrichCountries(rows) {
+  const countries = await getCountries();
+  const countryNames = new Map(countries.map((country) => [country.code, country.name]));
+  let index = 0;
+  const workerCount = Math.min(24, rows.length);
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (index < rows.length) {
+      const row = rows[index];
+      index += 1;
+      row.country = await getEventCountry(row.id, countryNames) || "Chưa rõ";
+    }
+  }));
+}
+
+async function getEventCountry(eventId, countryNames) {
+  if (!eventId) return "";
+  if (eventCountryCache.has(eventId)) return eventCountryCache.get(eventId);
+
+  try {
+    const html = await cachedFetch(`https://ratings.fide.com/report.phtml?event=${encodeURIComponent(eventId)}`);
+    const match = html.match(/rated_tournaments\.phtml\?country=([A-Z]{3})&period=/i);
+    const code = match?.[1]?.toUpperCase() || "";
+    const country = countryNames.get(code) || code;
+    eventCountryCache.set(eventId, country);
+    return country;
+  } catch {
+    eventCountryCache.set(eventId, "");
+    return "";
+  }
 }
 
 function applyFilters(rows, filters) {
