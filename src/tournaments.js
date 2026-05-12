@@ -129,11 +129,7 @@ async function fetchRatedTournaments(filters) {
       if (parsed.name) rows.push({ ...parsed, source: "FIDE Rated Tournaments" });
     }
   }
-  const uniqueRows = dedupe(rows);
-  if (country === "all") {
-    await enrichCountries(uniqueRows);
-  }
-  return uniqueRows;
+  return dedupe(rows);
 }
 
 function parseFideJson(value) {
@@ -209,7 +205,7 @@ function parseRatedDataRow(item, country, period) {
     name,
     type: type.label,
     typeKey: type.key,
-    country: country === "all" ? "" : country,
+    country: country === "all" ? "Đang xác định" : country,
     city: clean(city),
     startDate: normalizeDate(clean(startDate)),
     endDate: normalizeDate(endDate),
@@ -220,25 +216,13 @@ function parseRatedDataRow(item, country, period) {
   };
 }
 
-async function enrichCountries(rows) {
-  const countries = await getCountries();
-  const countryNames = new Map(countries.map((country) => [country.code, country.name]));
-  let index = 0;
-  const workerCount = Math.min(24, rows.length);
-  await Promise.all(Array.from({ length: workerCount }, async () => {
-    while (index < rows.length) {
-      const row = rows[index];
-      index += 1;
-      row.country = await getEventCountry(row.id, countryNames) || "Chưa rõ";
-    }
-  }));
-}
-
-async function getEventCountry(eventId, countryNames) {
+export async function getEventCountry(eventId) {
   if (!eventId) return "";
   if (eventCountryCache.has(eventId)) return eventCountryCache.get(eventId);
 
   try {
+    const countries = await getCountries();
+    const countryNames = new Map(countries.map((country) => [country.code, country.name]));
     const html = await cachedFetch(`https://ratings.fide.com/report.phtml?event=${encodeURIComponent(eventId)}`);
     const match = html.match(/rated_tournaments\.phtml\?country=([A-Z]{3})&period=/i);
     const code = match?.[1]?.toUpperCase() || "";

@@ -43,6 +43,7 @@ async function search() {
     countEl.textContent = String(data.count);
     noteEl.textContent = data.notes;
     renderRows(currentRows);
+    enrichCountries(currentRows);
   } catch (error) {
     currentRows = [];
     countEl.textContent = "0";
@@ -85,13 +86,37 @@ function renderRows(rows) {
         ${row.status ? `<span>${escapeHtml(row.status)}</span>` : ""}
       </td>
       <td>${escapeHtml(row.typeLabel || row.type || "Chưa rõ")}${row.typeNote ? `<span>${escapeHtml(row.typeNote)}</span>` : ""}</td>
-      <td>${escapeHtml(row.country || "")}</td>
+      <td class="country-cell" data-row-index="${index}">${escapeHtml(row.country || "")}</td>
       <td>${escapeHtml(row.city || "")}</td>
       <td>${escapeHtml(row.startDate || "")}</td>
       <td>${escapeHtml(row.endDate || "")}</td>
       <td>${escapeHtml(row.source || "")}</td>
     </tr>
   `).join("");
+}
+
+async function enrichCountries(rows) {
+  const targets = rows
+    .map((row, index) => ({ row, index }))
+    .filter((item) => item.row.id && item.row.country === "Đang xác định");
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(8, targets.length) }, async () => {
+    while (cursor < targets.length) {
+      const item = targets[cursor];
+      cursor += 1;
+      try {
+        const response = await fetch(`/api/event-country?event=${encodeURIComponent(item.row.id)}`);
+        const data = await response.json();
+        if (!data.ok) continue;
+        item.row.country = data.country || "Chưa rõ";
+        const cell = document.querySelector(`.country-cell[data-row-index="${item.index}"]`);
+        if (cell) cell.textContent = item.row.country;
+      } catch {
+        item.row.country = "Chưa rõ";
+      }
+    }
+  });
+  await Promise.all(workers);
 }
 
 function escapeHtml(value) {

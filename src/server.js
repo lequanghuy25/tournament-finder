@@ -1,7 +1,7 @@
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getCountries, getTournaments } from "./tournaments.js";
+import { getCountries, getEventCountry, getTournaments } from "./tournaments.js";
 import { exportExcelHtml } from "./xlsx.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -45,6 +45,19 @@ app.get("/api/diagnostics", async (_req, res) => {
 app.get("/api/countries", async (_req, res) => {
   try {
     res.json({ ok: true, countries: await getCountries() });
+  } catch (error) {
+    res.status(502).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/event-country", async (req, res) => {
+  try {
+    const event = String(req.query.event || "").replace(/\D/g, "");
+    if (!event) {
+      res.status(400).json({ ok: false, error: "Missing event id" });
+      return;
+    }
+    res.json({ ok: true, event, country: await getEventCountry(event) || "Chưa rõ" });
   } catch (error) {
     res.status(502).json({ ok: false, error: error.message });
   }
