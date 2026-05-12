@@ -217,8 +217,14 @@ function applyFilters(rows, filters) {
 
 function inferType(text) {
   const lower = text.toLowerCase();
+  const parts = lower.split(/\s+-\s+/).map((part) => part.trim()).filter(Boolean);
+  const specific = parts.length > 1 ? parts.at(-1) : lower;
   let key = "";
-  if (/960|fischer|random/.test(lower)) key = "chess960";
+  if (/960|fischer|random/.test(specific)) key = "chess960";
+  else if (/blitz|chớp/.test(specific)) key = "blitz";
+  else if (/rapid|nhanh/.test(specific)) key = "rapid";
+  else if (/standard|classical|chuẩn|regular/.test(specific)) key = "standard";
+  else if (/960|fischer|random/.test(lower)) key = "chess960";
   else if (/blitz|chớp/.test(lower)) key = "blitz";
   else if (/rapid|nhanh/.test(lower)) key = "rapid";
   else if (/standard|classical|chuẩn|regular/.test(lower)) key = "standard";
