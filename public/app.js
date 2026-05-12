@@ -36,7 +36,8 @@ async function search() {
   const params = new URLSearchParams(new FormData(form));
   try {
     const response = await fetch(`/api/tournaments?${params.toString()}`);
-    const data = await response.json();
+    const text = await response.text();
+    const data = parseJsonResponse(text);
     if (!response.ok || !data.ok) throw new Error([data.error, data.detail, data.hint].filter(Boolean).join(" "));
     currentRows = data.rows;
     countEl.textContent = String(data.count);
@@ -48,6 +49,14 @@ async function search() {
     noteEl.textContent = error.message;
     rowsEl.innerHTML = `<tr><td colspan="8" class="empty">Không lấy được dữ liệu từ FIDE. Server app vẫn chạy, nhưng mạng hiện tại không truy cập được nguồn FIDE.</td></tr>`;
   }
+}
+
+function parseJsonResponse(text) {
+  const value = String(text || "").trim();
+  if (value.startsWith("<!DOCTYPE") || value.startsWith("<html")) {
+    throw new Error("Máy chủ đang trả HTML thay vì JSON. Hãy tải lại trang hoặc thử lại sau vài giây.");
+  }
+  return JSON.parse(value);
 }
 
 async function loadCountries() {

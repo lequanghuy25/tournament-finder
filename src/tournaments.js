@@ -120,7 +120,8 @@ async function fetchRatedTournaments(filters) {
 
   const rows = [];
   for (const page of pages) {
-    const data = JSON.parse(page.json);
+    const data = parseFideJson(page.json);
+    if (!data) continue;
     const items = Array.isArray(data?.data) ? data.data : [];
     for (const item of items) {
       const parsed = parseRatedDataRow(item, country, page.period);
@@ -128,6 +129,16 @@ async function fetchRatedTournaments(filters) {
     }
   }
   return dedupe(rows);
+}
+
+function parseFideJson(value) {
+  const text = String(value || "").trim();
+  if (!text || text.startsWith("<!DOCTYPE") || text.startsWith("<html")) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 async function cachedFetch(url, options = {}) {
