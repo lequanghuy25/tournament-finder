@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FIDE Tournament Finder</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="toolbar" aria-label="Bộ lọc tìm kiếm">
+        <div>
+          <p class="eyebrow">FIDE Tournament Finder</p>
+          <h1>Tìm giải FIDE rating phù hợp để thi đấu</h1>
+        </div>
+        <button id="exportButton" type="button">Xuất Excel</button>
+      </section>
+
+      <form id="filters" class="filters">
+        <label>
+          Từ khóa
+          <input name="query" type="search" placeholder="Tên giải, thành phố, quốc gia">
+        </label>
+        <label>
+          Nguồn dữ liệu
+          <select name="source">
+            <option value="calendar">FIDE Calendar</option>
+            <option value="rated">FIDE Rated Tournaments</option>
+            <option value="sample">Dữ liệu mẫu</option>
+          </select>
+        </label>
+        <label>
+          Loại cờ
+          <select name="type">
+            <option value="all">Tất cả</option>
+            <option value="standard">Cờ chuẩn</option>
+            <option value="rapid">Cờ nhanh</option>
+            <option value="blitz">Cờ chớp</option>
+            <option value="chess960">Fischer Random</option>
+          </select>
+        </label>
+        <label>
+          Quốc gia
+          <input name="country" list="countries" placeholder="VD: VIE, THA, USA">
+        </label>
+        <label>
+          Từ năm
+          <input name="fromYear" type="number" min="2000" max="2026" value="2026">
+        </label>
+        <label>
+          Đến ngày
+          <input name="toDate" type="date">
+        </label>
+        <button type="submit">Tìm kiếm</button>
+      </form>
+
+      <datalist id="countries">
+        <option value="VIE">Vietnam</option>
+        <option value="THA">Thailand</option>
+        <option value="USA">United States</option>
+        <option value="SGP">Singapore</option>
+        <option value="MAS">Malaysia</option>
+        <option value="PHI">Philippines</option>
+        <option value="INA">Indonesia</option>
+        <option value="CHN">China</option>
+        <option value="IND">India</option>
+      </datalist>
+
+      <section class="status">
+        <div><strong id="count">0</strong> kết quả</div>
+        <p id="note">Sẵn sàng tìm kiếm.</p>
+      </section>
+
+      <section class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên giải</th>
+              <th>Loại</th>
+              <th>Quốc gia</th>
+              <th>Thành phố</th>
+              <th>Bắt đầu</th>
+              <th>Kết thúc</th>
+              <th>Nguồn</th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <tr><td colspan="7" class="empty">Nhập bộ lọc rồi tìm kiếm.</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
