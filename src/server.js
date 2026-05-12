@@ -154,6 +154,23 @@ app.get("/api/debug/fide-rated-data", async (req, res) => {
   res.type("application/json").send(text);
 });
 
+app.get("/api/debug/fide-report", async (req, res) => {
+  if (process.env.ENABLE_DEBUG !== "1") {
+    res.status(404).json({ ok: false });
+    return;
+  }
+  const event = String(req.query.event || "").replace(/\D/g, "");
+  if (!event) {
+    res.status(400).json({ ok: false, error: "Missing event" });
+    return;
+  }
+  const response = await fetch(`https://ratings.fide.com/report.phtml?event=${event}`, {
+    headers: { "user-agent": "Mozilla/5.0 FIDE tournament finder diagnostics" }
+  });
+  const text = await response.text();
+  res.type("text/plain").send(text.slice(0, 60000));
+});
+
 app.get("/api/tournaments", async (req, res) => {
   try {
     const result = await getTournaments({
